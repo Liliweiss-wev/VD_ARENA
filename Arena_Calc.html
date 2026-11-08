@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>아레나 1등 역전 계산기</title>
+<script>try{var _t=localStorage.getItem("arena-theme");if(_t==="light"||_t==="dark")document.documentElement.setAttribute("data-theme",_t)}catch(e){}</script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f5;--card:#fff;--ink:#14202b;--mute:#5d6b78;--line:#d5dde4;--me:#0e7c86;--top:#c58a12;--bad:#d1495b;--ok:#2f8f5b;--soft:#e4edf1;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1016;--card:#1b2a36;--ink:#f3f7fa;--mute:#b4c1cc;--line:#42586a;--me:#4fd3df;--top:#f0b840;--bad:#ff8a9a;--ok:#62d99a;--soft:#2a3f4f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0a1016;--card:#1b2a36;--ink:#f3f7fa;--mute:#b4c1cc;--line:#42586a;--me:#4fd3df;--top:#f0b840;--bad:#ff8a9a;--ok:#62d99a;--soft:#2a3f4f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;font-size:15px;background:var(--bg);color:var(--ink);font-family:"Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.5}
+main{max-width:1240px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:22px;font-weight:900;margin:0 0 16px}
+h2{font-size:17px;font-weight:900;margin:0 0 12px;display:flex;align-items:center;gap:8px}h2::before{content:"";flex:none;width:4px;height:18px;border-radius:2px;background:var(--me)}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+label{font-size:13px;color:var(--mute)}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+input:focus-visible,button:focus-visible{outline:2px solid var(--me);outline-offset:1px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:6px;padding:7px 12px}
+button.pri{background:var(--me);color:#fff;border-color:var(--me);font-weight:700}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.row>div{flex:1 1 140px}
+.users{display:grid;gap:8px;margin:12px 0}
+.u{display:grid;grid-template-columns:22px 70px 1fr 110px 36px;gap:8px;align-items:center}
+.grip{cursor:grab;color:var(--mute);text-align:center;font-size:20px;line-height:1;user-select:none;touch-action:none}.grip:active{cursor:grabbing}
+.u.drag{background:var(--soft);border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,.25);position:relative;z-index:2}
+.u .x{padding:7px 0;color:var(--bad)}
+.bk{display:flex;gap:8px;flex-wrap:wrap}.bk button{flex:1 1 140px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}
+th,td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--soft);font-weight:700}
+td input{text-align:center;width:90px}
+.big{display:flex;gap:24px;flex-wrap:wrap;align-items:baseline;margin-bottom:12px}
+.big b{font-size:40px;font-weight:900;color:var(--me);line-height:1}
+.big span{color:var(--mute);font-size:14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chips button[aria-pressed=true]{background:var(--me);color:#fff;border-color:var(--me);font-weight:700}
+.viz svg{display:block;width:100%;height:auto}.viz text{font-family:inherit}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:14px;align-items:start}
+.stick{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
+.viz svg{max-height:58vh}
+#et td:last-child{font-size:17px;font-weight:900}
+#et td{padding:7px 8px}
+#rt td{padding:4px 8px}#rt input{padding:4px 6px}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}.stick{position:static;max-height:none;overflow:visible}.viz svg{max-height:none}}
+.axis{position:absolute;left:0;right:0;top:200px;border-top:2px solid var(--line)}
+.pin{position:absolute;transform:translateX(-50%);text-align:center;font-size:12px;line-height:1.3}
+.pin .tag{display:inline-block;padding:3px 7px;border-radius:6px;color:#fff;background:var(--mute);white-space:nowrap}
+.pin .stem{position:absolute;left:50%;width:2px;background:var(--mute);transform:translateX(-50%);opacity:.5}
+.pin.me .tag{background:var(--me);font-weight:700}.pin.me .stem{background:var(--me);opacity:1}
+.pin.top .tag{background:var(--top)}.pin.top .stem{background:var(--top)}
+.pin .d{display:block;color:var(--mute);margin-top:2px}
+.pos{color:var(--ok);font-weight:700}.neg{color:var(--bad);font-weight:700}
+.bar{display:inline-block;height:8px;border-radius:4px;background:var(--me);vertical-align:middle;margin-left:6px}
+.bar.over{background:var(--bad)}
+.note{color:var(--mute);font-size:13px;margin:8px 0 0}
+.empty{color:var(--mute);padding:8px 0}
+button:disabled{opacity:.4;cursor:default}
+.tg{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:14px;color:var(--ink);cursor:pointer}
+.tg input{width:auto}
+.undo{color:var(--bad);font-weight:700}
+#chips button,#gchips button{padding:5px 8px;font-size:13px;min-width:46px}
+:root{--blue:#1f6feb}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--blue:#6cb0ff}}:root[data-theme="dark"]{--blue:#6cb0ff}
+.blue{color:var(--blue);font-weight:700}
+input[type=number]{-moz-appearance:textfield;appearance:textfield;text-align:center}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input:disabled{opacity:.55;cursor:not-allowed}
+.sw{width:46px;height:26px;border-radius:13px;border:1px solid var(--line);background:var(--soft);padding:0;position:relative;flex:none}
+.sw i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--mute);transition:left .15s}
+.sw.on{background:var(--me);border-color:var(--me)}.sw.on i{left:22px;background:#fff}
+.swl{font-size:13px;min-width:30px}
+.sg{font-size:12px;font-weight:700;min-height:16px}.sclock{font-weight:700;padding:7px 0}
+#stt td{padding:5px 4px}#stt td:first-child{text-align:center}
+th.today{background:var(--me);color:#fff}th.fut{opacity:.6}
+td.today{background:rgba(14,124,134,.14);box-shadow:inset 2px 0 0 var(--me),inset -2px 0 0 var(--me)}td.fut{opacity:.55}
+tr.me td{background:rgba(14,124,134,.09)}tr.me td.today{background:rgba(14,124,134,.3)}tr.me td:first-child{color:var(--me);box-shadow:inset 3px 0 0 var(--me)}
+.sclock{background:var(--soft);border-radius:8px;height:40px;padding:0 12px;display:flex;align-items:center;white-space:nowrap;overflow:hidden}
+.sc-top{display:flex;align-items:baseline;gap:10px;font-size:13px;color:var(--mute)}
+.sc-day{font-size:18px;font-weight:900;color:var(--me)}.sc-left{font-size:18px;font-weight:900}
+.sub{margin:-8px 0 14px;color:var(--mute);font-size:14px}
+.kpi{display:flex;gap:8px 24px;flex-wrap:wrap;align-items:center;background:var(--card);border:1px solid var(--line);border-left:6px solid var(--me);border-radius:10px;padding:8px 14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.kc{display:flex;flex-direction:column;line-height:1.25}.kc .kl{font-size:12px;color:var(--mute)}.kc b{font-size:19px;font-variant-numeric:tabular-nums}.kc b.big{font-size:27px;color:var(--me)}
+.kb{margin-left:auto;padding:6px 14px;border-radius:999px;font-weight:900;font-size:14px;background:var(--soft)}.kb.ok{color:var(--ok);border:2px solid var(--ok)}.kb.no{color:var(--bad);border:2px solid var(--bad)}
+@media (min-width:861px){.kpi{position:sticky;top:8px;z-index:5}.stick{top:96px;max-height:calc(100vh - 108px)}}
+.uh{margin-top:10px}.uh span{font-size:12px;color:var(--mute);text-align:center}
+.rtw{max-height:440px;overflow:auto}#rt th{position:sticky;top:0;z-index:1}
+#rt tr:nth-child(even) td,#et tr:nth-child(even) td{background:rgba(127,127,127,.07)}
+#rt tr.nx td{background:rgba(14,124,134,.18);box-shadow:inset 0 2px 0 var(--me),inset 0 -2px 0 var(--me)}#rt tr.dn td{color:var(--mute)}
+.sc-left.ok{color:var(--ok)}.sc-left.warn{color:var(--top)}.sc-left.hot{color:var(--bad);animation:pl 1.4s infinite}
+@keyframes pl{50%{opacity:.55}}@media (prefers-reduced-motion:reduce){.sc-left.hot{animation:none}}
+
+
+#chips{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}#chips button{min-width:0;padding:7px 2px}
+#ch svg{display:block;width:100%;height:auto;margin-bottom:4px}#ch{margin-bottom:14px;padding-bottom:14px;border-bottom:2px solid var(--line)}#ch:empty{display:none}
+.u input{text-align:center}
+#gs .scroll>div{min-width:720px}#gs svg{display:block;width:100%;height:auto}
+.lg{display:flex;gap:6px 8px;flex-wrap:wrap;margin:4px 0 10px;font-size:13px}.lg i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+#gm button{padding:5px 10px;font-size:13px}.lgb{padding:5px 10px;font-size:13px;font-weight:700}.lgb[aria-pressed=false]{opacity:.45;text-decoration:line-through}
+
+.kpi{background:linear-gradient(135deg,#093f45 0%,#0e7c86 100%);border:0;border-left:8px solid #f2c744;border-radius:12px;padding:10px 18px;box-shadow:0 6px 18px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.12) inset;color:#fff}
+.kpi .kc .kl{color:rgba(255,255,255,.78);font-weight:700}
+.kpi .kc b{color:#fff}
+.kpi .kc b.big{color:#ffe08a}
+.kpi .blue{color:#a9d4ff}
+.kpi .neg{color:#ffb3bd}
+.kpi .kdv{display:inline-block;width:2px;height:.9em;background:rgba(255,255,255,.65);margin:0 9px;vertical-align:-1px;border-radius:1px}
+.kpi .kb{background:rgba(0,0,0,.28);border-width:2px;border-style:solid}
+.kpi .kb.ok{color:#8bf5b9;border-color:#8bf5b9}
+.kpi .kb.no{color:#ffb3bd;border-color:#ffb3bd}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.hd h1{margin:0}
+#theme{border-radius:999px;padding:7px 16px;font-weight:700;white-space:nowrap;background:var(--card);border:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) section{box-shadow:0 2px 12px rgba(0,0,0,.5)}:root:not([data-theme="light"]) input::placeholder{color:#8497a6}:root:not([data-theme="light"]) input:disabled{opacity:1;color:var(--mute);background:#13202a;border-color:#33485a}:root:not([data-theme="light"]) th{background:#32495b}:root:not([data-theme="light"]) tr.me td{background:rgba(79,211,223,.14)}:root:not([data-theme="light"]) tr.me td.today{background:rgba(79,211,223,.3)}:root:not([data-theme="light"]) td.today{background:rgba(79,211,223,.16)}:root:not([data-theme="light"]) .viz svg rect[style*="fill-opacity:.2"]{fill-opacity:.45!important}:root:not([data-theme="light"]) .sw{background:#3a5164;border-color:#5c778c}:root:not([data-theme="light"]) .sw.on{background:var(--me);border-color:var(--me)}:root:not([data-theme="light"]) .sw i{background:#c5d2dc}:root:not([data-theme="light"]) .sw.on i{background:#fff}}
+:root[data-theme="dark"] section{box-shadow:0 2px 12px rgba(0,0,0,.5)}
+:root[data-theme="dark"] input::placeholder{color:#8497a6}
+:root[data-theme="dark"] input:disabled{opacity:1;color:var(--mute);background:#13202a;border-color:#33485a}
+:root[data-theme="dark"] th{background:#32495b}
+:root[data-theme="dark"] tr.me td{background:rgba(79,211,223,.14)}
+:root[data-theme="dark"] tr.me td.today{background:rgba(79,211,223,.3)}
+:root[data-theme="dark"] td.today{background:rgba(79,211,223,.16)}
+:root[data-theme="dark"] .viz svg rect[style*="fill-opacity:.2"]{fill-opacity:.45!important}
+:root[data-theme="dark"] .sw{background:#3a5164;border-color:#5c778c}
+:root[data-theme="dark"] .sw.on{background:var(--me);border-color:var(--me)}
+:root[data-theme="dark"] .sw i{background:#c5d2dc}
+:root[data-theme="dark"] .sw.on i{background:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .viz tspan[style*="line-through"],:root:not([data-theme="light"]) .viz text[style*="line-through"]{opacity:.88!important}}
+:root[data-theme="dark"] .viz tspan[style*="line-through"],:root[data-theme="dark"] .viz text[style*="line-through"]{opacity:.88!important}
+.kpi .kc b.dp,.kpi .kc b.dn{font-size:24px;font-weight:900;paint-order:stroke fill;-webkit-text-stroke:3px rgba(3,20,26,.85);text-shadow:0 2px 4px rgba(0,0,0,.5)}
+.kpi .kc b.dp{color:#7fc3ff}.kpi .kc b.dn{color:#ff8a9c}
+.kpi{align-items:center;gap:8px 28px}
+.kpi .kc{justify-content:flex-start}
+.kpi .kc .kl{line-height:18px;height:18px;margin-bottom:2px}
+.kpi .kc b,.kpi .kc b.big,.kpi .kc b.dp,.kpi .kc b.dn{margin:0;gap:0;display:flex;align-items:center;height:34px;line-height:34px;font-size:24px;font-weight:900;white-space:nowrap}
+.kpi .kc b.big,.kpi .kc b.neg{font-size:32px;paint-order:stroke fill;-webkit-text-stroke:3.5px rgba(3,20,26,.85);text-shadow:0 2px 6px rgba(0,0,0,.5),0 0 14px rgba(255,224,138,.35)}
+.kpi .kc b.big{color:#ffe27a}.kpi .kc b.neg{color:#ff8a9c;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+</style>
+</head>
+<body>
+<main>
+<div class="hd"><h1>아레나 1등 역전 계산기</h1><button type="button" id="theme"></button></div>
+<p class="sub">내 점수와 상대 점수를 입력하면 역전에 필요한 회당 점수와 가능 여부를 바로 보여줍니다.</p>
+<div id="kpi" class="kpi"></div>
+<div class="cols">
+<div class="left">
+<section>
+<div class="row">
+<div><label for="me">내 점수</label><input id="me" type="number" inputmode="numeric"></div>
+<div><label for="rounds">총 도전 횟수</label><input id="rounds" type="number" min="1" inputmode="numeric"></div>
+</div>
+</section>
+
+<section>
+<h2>유저</h2>
+<div class="u uh"><span></span><span>등수</span><span>닉네임</span><span>점수</span><span></span></div>
+<div class="users" id="users"></div>
+<button class="pri" id="add">유저 추가</button>
+<p class="note">1등으로 입력한 유저(없으면 최고 점수 유저)를 역전 목표로 계산합니다. 점수를 입력하면 점수가 높은 유저가 위로 올라가고 등수가 자동으로 바뀝니다. (⠿ 드래그로 직접 순서를 바꿀 수도 있습니다.)</p>
+</section>
+
+<section>
+<h2>데이터 백업</h2>
+<div class="bk"><button class="pri" id="jsave" type="button">JSON 파일로 저장</button><button id="jload" type="button">JSON 파일 불러오기</button></div>
+<input type="file" id="jfile" accept=".json,application/json" style="display:none">
+<p class="note">데이터는 브라우저 저장소에 자동 저장되지만 캐시·사이트 데이터를 지우면 사라집니다. 중요한 기록은 JSON 파일로 저장해 두고, 삭제 후에는 불러오기로 복구하세요. 내 점수, 유저, 획득점수, 구간표, 시즌 기록이 모두 포함됩니다.</p>
+<div class="note" id="jmsg" role="status"></div>
+</section>
+
+
+</div>
+<div class="right">
+<section>
+<h2>획득 점수별 점수 차 구간</h2>
+<div class="tg"><button type="button" class="sw" id="ton" role="switch" aria-checked="false" aria-label="구간 수정"><i></i></button><span>구간 수정</span><b class="swl" id="tonl"></b></div>
+<div class="scroll"><table id="tt"></table></div>
+<p class="note">점수 차 = 상대 점수 − 내 점수. 수정을 켜면 min, max를 고칠 수 있고 바로 반영됩니다. 끄면 수정한 값이 기본값으로 저장되고, "기본값으로 되돌리기"는 저장된 기본값으로 복원합니다.</p>
+<button id="treset" style="margin-top:8px">기본값으로 되돌리기</button>
+</section>
+</div>
+</div>
+
+<div class="cols">
+<div class="left">
+<section>
+<h2>역전 필요 점수</h2>
+<label>역전 목표 유저 (누르면 해당 유저 점수 기준으로 계산)</label>
+<div class="chips" id="tbtn" style="margin-top:6px"></div>
+<div class="big" id="sum"></div>
+<div id="ch"></div>
+<label style="display:block;margin-bottom:6px">획득점수 빠른 입력: 누른 점수가 1회차부터 순서대로 입력됩니다.</label>
+<div class="chips" id="gchips"></div>
+<div class="scroll rtw"><table id="rt"></table></div>
+<p class="note">획득점수를 입력하면 그 회차부터 현재 점수와 점수 차, 남은 회당 필요점수가 바로 반영됩니다. 남은 회당 필요점수 = (남은 점수 차 + 1) ÷ 남은 도전 횟수.</p>
+<button id="clr" style="margin-top:8px">전체 지우기</button>
+</section>
+
+</div>
+<div class="right stick">
+<section>
+<h2>점수 차이와 예상 획득점수</h2>
+<div class="tg"><button type="button" class="sw" id="on" role="switch" aria-checked="true" aria-label="예상 획득점수 반영"><i></i></button><span>예상 획득점수 반영</span><b class="swl" id="onl"></b></div>
+<label>이번 도전에서 획득할 점수를 고르면, 내 점수에 더한 값 기준으로 각 유저를 이겼을 때 받을 점수가 오른쪽에 표시됩니다.</label>
+<div class="chips" id="chips" style="margin-top:6px"></div>
+<div class="viz" id="viz"></div>
+</section>
+<section>
+<h2>예상 획득점수 표</h2>
+<div class="scroll"><table id="et"></table></div>
+</section>
+</div>
+</div>
+<section id="st">
+<h2>시즌 통계 · 일별 점수 기록</h2>
+<div class="row">
+<div><label for="sstart">시즌 시작일 (월요일)</label><input id="sstart" type="date"></div>
+<div><label for="perday">하루 도전 횟수</label><input id="perday" type="number" min="1" inputmode="numeric"></div>
+<div style="flex:2 1 260px"><label>시즌 진행</label><div id="sclock" class="sclock"></div></div>
+</div>
+<p class="note">하루 기본 10회 + 크리스탈 10회 = 20회가 기본값입니다. 칸에는 그날 마지막으로 확인한 누적 점수를 입력하세요. 모두 500점에서 시작하고, 칸 아래 숫자는 이전 기록 대비 획득점수입니다.</p>
+<div class="scroll"><table id="stt"></table></div>
+<h2 style="margin-top:18px">1등 예상 최종 점수</h2>
+<div class="scroll"><table id="spj"></table></div>
+<div class="note" id="sn"></div>
+</section>
+<section id="gs">
+<h2>유저별 점수 추이 (월~일)</h2>
+<label>그래프 종류 · 예상 기준 · 범례의 숫자와 색은 등수입니다(1등 금색, 2등 보라색…). 눌러서 유저를 켜고 끌 수 있습니다</label>
+<div class="chips" id="gm" style="margin-top:6px"></div>
+<div class="lg" id="gl"></div>
+<label id="gct" style="display:block;font-weight:700;color:var(--ink);margin-bottom:4px"></label>
+<div class="scroll"><div id="gc1"></div></div>
+<p class="note" id="gnote">꺾은선: 실선은 기록, 점선은 일요일까지의 예상입니다. 금색은 현재 역전 목표(1등) 유저, 연한 배경은 오늘입니다.</p>
+</section>
+</main>
+<script>
+var KEY="arena-calc-v1";
+var S={me:3656,rounds:20,sel:28,gains:[],users:[{id:1,rank:1,nick:"1등",score:4212}],nid:2};
+try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&p.users)S=p}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function $(i){return document.getElementById(i)}
+function curScore(){var s=num(S.me),n=Math.max(1,S.rounds|0);for(var i=0;i<n;i++){var g=S.gains[i];if(g!==""&&g!=null)s+=Number(g)}return s}
+function setSw(id,v){var b=$(id);b.setAttribute("aria-checked",!!v);b.classList.toggle("on",!!v);var l=$(id+"l");if(l)l.textContent=v?"ON":"OFF"}
+function defTiers(){return[[40,200,300],[38,160,199],[36,120,159],[34,80,119],[32,40,79],[30,-19,39],[28,-80,-49]].map(function(r){return{g:r[0],min:r[1],max:r[2]}})}
+function tier(d){var T=S.tiers.filter(function(t){return t.min!==""&&t.max!==""&&t.min!=null&&t.max!=null});if(!T.length)return null;
+for(var i=0;i<T.length;i++)if(d>=T[i].min&&d<=T[i].max)return T[i].g;
+var hi=T.reduce(function(a,b){return b.max>a.max?b:a}),lo=T.reduce(function(a,b){return b.min<a.min?b:a});
+if(d>hi.max)return hi.g;if(d<lo.min)return null;
+var best=null;T.forEach(function(t){if(t.max<d&&(!best||t.max>best.max))best=t});return best?best.g:null}
+function tiers(){var tb=$("tt");tb.textContent="";var h=el("tr");["획득점수","min","max","구간범위"].forEach(function(x){h.appendChild(el("th",null,x))});tb.appendChild(h);
+S.tiers.forEach(function(t){var tr=el("tr");tr.appendChild(el("td",null,t.g+"점")).style.fontWeight="700";var rg=el("td");
+function upd(){rg.textContent=(t.min===""||t.max===""||t.min==null||t.max==null)?"-":fmt(t.max-t.min)}
+function cell(k){var td=el("td"),i=document.createElement("input");i.type="number";i.inputMode="numeric";i.setAttribute("aria-label",t.g+"점 "+k);i.disabled=!S.tEdit;i.value=t[k]==null?"":t[k];
+i.addEventListener("input",function(){t[k]=i.value===""?"":Number(i.value);save();upd();viz();expected()});td.appendChild(i);return td}
+tr.appendChild(cell("min"));tr.appendChild(cell("max"));upd();tr.appendChild(rg);tb.appendChild(tr)})}
+function fmt(n){return Number.isInteger(n)?String(n):n.toFixed(2).replace(/0+$/,"").replace(/\.$/,"")}
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function num(v){var n=parseFloat(v);return isFinite(n)?n:0}
+function target(){var u=S.users.filter(function(u){return u.score!==""&&u.score!=null});if(!u.length)return null;var sel=u.filter(function(x){return x.id===S.tid});if(sel.length)return sel[0];
+var f=u.filter(function(x){return Number(x.rank)===1});if(f.length)return f[0];
+return u.reduce(function(a,b){return b.score>a.score?b:a})}
+
+function grip(r,box){var h=el("span","grip","⠿");h.title="드래그해서 순서 변경";h.setAttribute("aria-label","순서 변경");
+h.addEventListener("pointerdown",function(e){e.preventDefault();try{h.setPointerCapture(e.pointerId)}catch(x){}r.classList.add("drag");
+function mv(ev){var p=r.previousElementSibling,n=r.nextElementSibling,y=ev.clientY;
+if(p){var b=p.getBoundingClientRect();if(y<b.top+b.height/2)box.insertBefore(r,p)}
+if(n){var c=n.getBoundingClientRect();if(y>c.top+c.height/2)box.insertBefore(n,r)}}
+function up(){h.removeEventListener("pointermove",mv);h.removeEventListener("pointerup",up);h.removeEventListener("pointercancel",up);r.classList.remove("drag");
+var o=[].slice.call(box.children).map(function(x){return x._u}).filter(Boolean);if(o.length===S.users.length){S.users=o;save();derived()}}
+h.addEventListener("pointermove",mv);h.addEventListener("pointerup",up);h.addEventListener("pointercancel",up)});return h}
+var sortT=null;
+function sortSoon(){clearTimeout(sortT);sortT=setTimeout(autoSort,700)}
+function autoSort(){clearTimeout(sortT);var box=$("users"),rows=[].slice.call(box.children).filter(function(r){return r._u});if(rows.length<2&&!rows.length)return;
+function sc(r){var v=r._u.score;return v===""||v==null?null:Number(v)}
+var ord=rows.map(function(r,i){return{r:r,i:i}}).sort(function(a,b){var x=sc(a.r),y=sc(b.r);if(x==null&&y==null)return a.i-b.i;if(x==null)return 1;if(y==null)return -1;return y-x||a.i-b.i}).map(function(o){return o.r});
+var moved=ord.some(function(r,i){return r!==rows[i]});
+var rk=0,prev=null;ord.forEach(function(r,i){var v=sc(r);if(v==null||v!==prev)rk=i+1;prev=v;r._u.rank=rk;if(r._rk)r._rk.value=rk});
+if(moved){var act=document.activeElement;ord.forEach(function(r){box.appendChild(r)});if(act&&act!==document.activeElement&&box.contains(act)){try{act.focus()}catch(e){}}}
+S.users=ord.map(function(r){return r._u});save();stTable();spj();derived()}
+function renderUsers(){var box=$("users");box.textContent="";
+if(!S.users.length)box.appendChild(el("div","empty","유저 추가 버튼을 눌러 상대를 입력하세요."));
+S.users.forEach(function(u){var r=el("div","u");r._u=u;r.appendChild(grip(r,box));
+function inp(k,ph,type,al){var i=document.createElement("input");i.type=type;i.placeholder=ph;i.setAttribute("aria-label",al);i.value=u[k]==null?"":u[k];
+i.addEventListener("input",function(){u[k]=type==="number"?(i.value===""?"":Number(i.value)):i.value;if(k==="score")syncUser(u);save();derived();if(k==="score")sortSoon()});
+if(k==="score")i.addEventListener("change",autoSort);return i}
+r._rk=r.appendChild(inp("rank","등수","number","등수"));r.appendChild(inp("nick","닉네임","text","닉네임"));r.appendChild(inp("score","점수","number","점수"));
+var x=el("button","x","✕");x.setAttribute("aria-label","유저 삭제");x.onclick=function(){S.users=S.users.filter(function(v){return v!==u});save();renderUsers();derived()};
+r.appendChild(x);box.appendChild(r)});stTable();spj()}
+
+function spread(a,gap,lo,hi){a.sort(function(x,y){return x.y-y.y});
+a.forEach(function(it,i){it.ly=i&&it.y<a[i-1].ly+gap?a[i-1].ly+gap:it.y});
+var over=a.length?a[a.length-1].ly-hi:0;if(over>0)a.forEach(function(it){it.ly-=over});
+a.forEach(function(it,i){var m=i?a[i-1].ly+gap:lo;if(it.ly<m)it.ly=m})}
+function viz(){var v=$("viz");v.textContent="";var me=curScore(),g=me+(S.on?S.sel:0);
+var list=S.users.filter(function(u){return u.score!==""&&u.score!=null});var t=target();
+if(!list.length){v.appendChild(el("div","empty","유저를 추가하면 점수 차이가 표시됩니다."));return}
+var all=list.map(function(u){return u.score}).concat([me,g,t?t.score:me]);
+var mn=Math.min.apply(null,all),mx=Math.max.apply(null,all);var span=(mx-mn)||1;mn-=span*.07;mx+=span*.07;span=mx-mn;
+var W=400,AX=150,pad=34,H=Math.max(400,(list.length+2)*54+70),lo=pad-10,hi=H-pad+10;
+function Y(s){return pad+(mx-s)/span*(H-2*pad)}
+var NS="http://www.w3.org/2000/svg";
+function mk(tag,at,txt){var e=document.createElementNS(NS,tag);for(var k in at)e.setAttribute(k,at[k]);if(txt!=null)e.textContent=txt;return e}
+var svg=mk("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":"점수 차이 시각화"});
+var TT=S.tiers.filter(function(x){return x.min!==""&&x.max!==""&&x.min!=null&&x.max!=null});
+var topT=TT.reduce(function(a,b){return b.max>a.max?b:a},TT[0]||{max:0});
+TT.forEach(function(x,xi){var rk=TT.filter(function(y){return y.g>x.g}).length,hue=[0,25,48,110,175,205,250][Math.min(rk,6)];var y1=x===topT?lo:Math.max(lo,Y(g+x.max)),y2=Math.min(hi,Y(g+x.min));if(y2-y1<1)return;
+svg.appendChild(mk("rect",{x:0,y:y1,width:AX,height:y2-y1,style:"fill:hsl("+hue+",75%,52%);fill-opacity:.2;stroke:hsl("+hue+",70%,40%);stroke-opacity:.6;stroke-width:1"}));
+if(y2-y1>16)svg.appendChild(mk("text",{x:4,y:y1+14,style:"fill:var(--ink);font-weight:700;font-size:12px;stroke:var(--card);stroke-width:3;paint-order:stroke"},x.g+"점"))});
+svg.appendChild(mk("line",{x1:AX,x2:AX,y1:lo,y2:hi,style:"stroke:var(--line);stroke-width:3"}));
+if(t)svg.appendChild(mk("line",{x1:AX,x2:AX,y1:Y(me),y2:Y(t.score),style:"stroke:var(--top);stroke-width:7;opacity:.55"}));
+var L=[{y:Y(me),a:"나 (현재)",b:fmt(me)}];if(S.on)L.push({y:Y(g),a:"+"+S.sel+"점 획득 후",b:fmt(g),ghost:1});spread(L,46,lo,hi);
+L.forEach(function(it){
+svg.appendChild(mk("circle",{cx:AX,cy:it.y,r:it.ghost?6:8,style:it.ghost?"fill:var(--card);stroke:var(--me);stroke-width:2.5;stroke-dasharray:3 2":"fill:var(--me)"}));
+
+
+});
+var R=list.map(function(u){return{u:u,y:Y(u.score)}});R.push({me:1,y:Y(me),a:"나 (현재)",b:fmt(me)});if(S.on)R.push({me:1,ghost:1,y:Y(g),a:(S.sel>=0?"+":"")+S.sel+"점 획득 후",b:fmt(g)});spread(R,52,lo,hi);
+R.forEach(function(it){if(it.me){svg.appendChild(mk("line",{x1:AX+8,y1:it.y,x2:AX+26,y2:it.ly,style:"stroke:var(--me);stroke-width:1.5"}));svg.appendChild(mk("text",{x:AX+30,y:it.ly-1,style:"fill:var(--me);font-weight:900;font-size:15px"},it.a));svg.appendChild(mk("text",{x:AX+30,y:it.ly+16,style:"fill:var(--ink);font-weight:700;font-size:14px"},"점수 "+it.b));return}var u=it.u,top=u===(t&&t.real||t),d=u.score-me,gain=tier(u.score-g),col=top?"var(--top)":"var(--mute)";
+svg.appendChild(mk("line",{x1:AX+6,y1:it.y,x2:AX+26,y2:it.ly,style:"stroke:"+col+";stroke-width:1.5"}));
+svg.appendChild(mk("circle",{cx:AX,cy:it.y,r:top?7:5,style:"fill:"+col}));
+
+svg.appendChild(mk("text",{x:AX+30,y:it.ly-1,style:"fill:"+(top?"var(--top)":"var(--ink)")+";font-weight:700;font-size:14px"},(u.rank!==""&&u.rank!=null?u.rank+"등 ":"")+(u.nick||"이름 없음")));
+var pre="점수 "+fmt(u.score)+" · 나와 ",t2=mk("text",{x:AX+30,y:it.ly+16,style:"fill:var(--ink);font-weight:700;font-size:14px"},pre),d2=u.score-g;
+t2.appendChild(mk("tspan",{style:"font-weight:900;fill:"+(d>=0?"var(--blue)":"var(--bad)")+(S.on?";text-decoration:line-through;opacity:.55":"")},(d>=0?"+":"")+fmt(d)));svg.appendChild(t2);
+if(S.on){var t3=mk("text",{x:AX+30,y:it.ly+33,style:"font-weight:700;font-size:14px"});t3.appendChild(mk("tspan",{style:"fill:none"},pre));t3.appendChild(mk("tspan",{style:"font-weight:900;fill:"+(d2>=0?"var(--blue)":"var(--bad)")},(d2>=0?"+":"")+fmt(d2)));svg.appendChild(t3)}
+var og=tier(d),gt=function(x){return x==null?"≤26":"+"+x},gc=function(x){return x==null?"var(--bad)":"var(--ok)"};
+var chg=S.on&&og!==gain;
+if(chg)svg.appendChild(mk("text",{x:W-6,y:it.ly-9,"text-anchor":"end",style:"font-weight:900;font-size:14px;text-decoration:line-through;opacity:.55;fill:"+gc(og)},gt(og)));
+svg.appendChild(mk("text",{x:W-6,y:it.ly+(chg?9:3),"text-anchor":"end",style:"font-weight:900;font-size:19px;fill:"+gc(gain)},gt(gain)));
+svg.appendChild(mk("text",{x:W-6,y:it.ly+(chg?25:18),"text-anchor":"end",style:"fill:var(--mute);font-size:12px"},"이기면"))});
+v.appendChild(svg)}
+
+function sum(){var b=$("sum");b.textContent="";var t=target();
+if(!t){b.appendChild(el("span","empty","목표 유저를 추가하세요."));return}
+var diff=t.score-num(S.me),n=Math.max(1,S.rounds|0);
+if(diff<0){var a=el("b",null,"이미 앞서 있어요");a.style.fontSize="24px";b.appendChild(a);return}
+var m=(diff+1)/n;var w=el("div");w.appendChild(el("span",null,"도전 1회당 최소 획득점수"));w.appendChild(document.createElement("br"));w.appendChild(el("b",null,fmt(Math.round(m*100)/100)));b.appendChild(w);
+b.appendChild(el("span",null,(t.nick||"이름 없음")+" 기준 · 점수 차 "+fmt(diff)+" + 1 ÷ "+n+"회"));
+if(m>40)b.appendChild(el("span","neg","40점으로도 부족해요"));
+var done=0;for(var i=0;i<n;i++){var g=S.gains[i];if(g!==""&&g!=null)done++}
+var c=curScore(),d2=t.score-c,left=n-done,box=el("div");box.style.cssText="flex:1 0 100%;background:var(--soft);border-radius:6px;padding:8px 10px;font-size:14px";
+box.textContent="입력 반영: 현재 점수 "+fmt(c)+" · 점수 차 "+fmt(d2)+(d2<0?" · 역전 달성":left>0?" · 남은 "+left+"회 · 회당 필요 "+fmt(Math.round((d2+1)/left*100)/100)+"점":" · 남은 횟수 없음");b.appendChild(box);
+var need=d2+1,cap=left*40,col=cap>=need?"var(--ok)":"var(--bad)",bn=el("div");bn.style.cssText="flex:1 0 100%;border-radius:6px;padding:8px 10px;font-weight:700;background:var(--soft);border-left:6px solid "+col+";color:"+col;
+bn.textContent=d2<0?"이미 역전했어요":cap>=need?"역전 가능 · 여유 "+fmt(cap-need)+"점 (남은 "+left+"회 × 40점 기준)":"역전 불가 · 남은 "+left+"회 × 40점으로도 "+fmt(need-cap)+"점 부족";b.appendChild(bn)}
+
+var RC=[];
+function rounds(){var tb=$("rt");tb.textContent="";RC=[];if(!target())return;var n=Math.max(1,S.rounds|0);
+var h=el("tr");["회차","현재점수","현재 점수 차","획득점수","남은 회당 필요점수"].forEach(function(x){h.appendChild(el("th",null,x))});tb.appendChild(h);
+for(var i=1;i<=n;i++){(function(i){var g=S.gains[i-1];var tr=el("tr");tr.appendChild(el("td",null,i));
+var cc=el("td"),dc=el("td"),ac=el("td");RC.push({c:cc,d:dc,a:ac,t:tr});tr.appendChild(cc);tr.appendChild(dc);
+var td=el("td");var inp=document.createElement("input");inp.type="number";inp.inputMode="numeric";inp.setAttribute("aria-label",i+"회차 획득점수");inp.value=g==null?"":g;
+function nxt(){var r=RC[i];if(r){r.i.focus();r.i.select()}}inp.addEventListener("input",function(){S.gains[i-1]=inp.value===""?"":Number(inp.value);save();live();if(/^-?\d{2}$/.test(inp.value))nxt()});inp.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();nxt()}});RC[RC.length-1].i=inp;td.appendChild(inp);tr.appendChild(td);tr.appendChild(ac);tb.appendChild(tr)})(i)}
+roundsCells()}
+function roundsCells(){var t=target();if(!t)return;var n=RC.length,cur=num(S.me);
+var fb=-1;for(var q=0;q<RC.length;q++)if(blank(S.gains[q])){fb=q;break}
+RC.forEach(function(r,k){var g=S.gains[k];r.t.className=blank(g)?(k===fb?"nx":""):"dn";var gv=g===""||g==null?0:Number(g);cur+=gv;var diff=t.score-cur;
+r.c.textContent=fmt(cur);r.d.textContent=fmt(diff);r.d.className=diff<0?"pos":"";
+var rem=diff,left=n-(k+1)+(blank(g)?1:0),c=r.a;c.textContent="";c.className="";
+if(rem<0){c.textContent="역전 달성";c.className="pos"}
+else if(left===0){c.textContent="-"}
+else{var a=(rem+1)/left;c.appendChild(el("span",a>40?"neg":null,fmt(Math.round(a*100)/100)));
+var bar=el("span","bar"+(a>40?" over":""));bar.style.width=Math.min(a/40,1)*90+"px";c.appendChild(bar)}
+})}
+function tbtns(){var c=$("tbtn");c.textContent="";var ok=S.users.some(function(x){return x.id===S.tid&&x.score!==""&&x.score!=null});
+var a=el("button",null,"1등 자동");a.setAttribute("aria-pressed",!ok);a.onclick=function(){S.tid=null;save();derived()};c.appendChild(a);
+S.users.forEach(function(u){if(u.score===""||u.score==null)return;var b=el("button",null,(u.rank!==""&&u.rank!=null?u.rank+"등 ":"")+(u.nick||"이름 없음"));b.setAttribute("aria-pressed",ok&&S.tid===u.id);b.onclick=function(){S.tid=u.id;save();derived()};c.appendChild(b)})}
+function kpi(){var k=$("kpi");k.textContent="";var t=target();if(!t){k.style.display="none";return}k.style.display="";
+var n=Math.max(1,S.rounds|0),done=0;for(var i=0;i<n;i++)if(!blank(S.gains[i]))done++;
+var left=n-done,d=t.score-curScore(),need=d+1,per=left>0?need/left:null;
+function c(l,v,cl){var e=el("div","kc");e.appendChild(el("span","kl",l));var b=el("b",cl||null);if(typeof v==="string")b.textContent=v;else b.appendChild(v);e.appendChild(b);k.appendChild(e)}
+var tg=document.createDocumentFragment();tg.appendChild(el("span",null,t.nick||"이름 없음"));tg.appendChild(el("span","kdv"));tg.appendChild(el("span",null,fmt(t.score)+"점"));c("역전 목표",tg);c("현재 점수 차",(d>=0?"+":"")+fmt(d),d>=0?"dp":"dn");c("남은 도전",left+" / "+n+"회");
+c("회당 필요 점수",d<0||per==null?"-":fmt(Math.round(per*100)/100),per!=null&&per>40?"neg":"big");
+var ok=d<0||left*40>=need;k.appendChild(el("div","kb "+(ok?"ok":"no"),d<0?"역전 달성":ok?"역전 가능 · 여유 "+fmt(left*40-need)+"점":"역전 불가 · "+fmt(need-left*40)+"점 부족"))}
+function stNames(){SR.forEach(function(ref){if(ref.id==="me")return;var u=S.users.filter(function(x){return x.id===ref.id})[0];if(u)ref.nc.textContent=u.nick||"이름 없음"})}
+function todayIdx(){var i=dayInfo();if(i&&i.n>=1&&i.n<=7)return i.n-1;return (new Date().getDay()+6)%7}
+function syncToday(){var k=todayIdx(),v=curScore(),arr=S.hist.me||(S.hist.me=[]);arr[k]=v;var ref=SR[0];if(ref&&ref.inp&&ref.inp[k])ref.inp[k].value=v;save();stCells();spj();trends()}
+function live(){roundsCells();viz();sum();expected();chart();syncToday();kpi()}
+function blank(g){return g===""||g==null}
+function scrollNx(){var w=document.querySelector(".rtw"),r=document.querySelector("#rt tr.nx");if(!w||!r)return;var th=w.querySelector("th"),hh=th?th.offsetHeight:0,wr=w.getBoundingClientRect(),rr=r.getBoundingClientRect(),m=rr.height;if(rr.bottom+m>wr.bottom)w.scrollTop+=rr.bottom+m-wr.bottom;else if(rr.top-m<wr.top+hh)w.scrollTop-=wr.top+hh-(rr.top-m)}
+function fillGain(s){for(var i=0;i<RC.length;i++){if(blank(S.gains[i])){S.gains[i]=s;RC[i].i.value=s;save();live();scrollNx();return}}}
+function undoGain(){for(var i=RC.length-1;i>=0;i--){if(!blank(S.gains[i])){S.gains[i]="";RC[i].i.value="";save();live();scrollNx();return}}}
+function gchips(){var c=$("gchips");c.textContent="";
+var l=el("button","undo","패배 -10");l.onclick=function(){fillGain(-10)};c.appendChild(l);
+for(var s=20;s<=40;s+=2){(function(s){var b=el("button",null,s+"점");b.onclick=function(){fillGain(s)};c.appendChild(b)})(s)}
+var u=el("button","undo","← 지우기");u.onclick=undoGain;c.appendChild(u)}
+
+function expected(){var tb=$("et");tb.textContent="";var me=curScore()+(S.on?S.sel:0);
+var h=el("tr");["등수","닉네임","점수","점수 차","예상 획득점수"].forEach(function(x){h.appendChild(el("th",null,x))});tb.appendChild(h);
+S.users.forEach(function(u){if(u.score===""||u.score==null)return;var d=u.score-me,g=tier(d);var tr=el("tr");
+tr.appendChild(el("td",null,u.rank===""||u.rank==null?"-":u.rank));tr.appendChild(el("td",null,u.nick||"-"));tr.appendChild(el("td",null,fmt(u.score)));
+tr.appendChild(el("td",d>=0?"blue":"neg",(d>=0?"+":"")+fmt(d)));tr.appendChild(el("td",g==null?"neg":"pos",g==null?"26점 이하":g+"점"));tb.appendChild(tr)});
+if(tb.rows.length===1){var r=el("tr"),c=el("td","empty","유저를 추가하세요");c.colSpan=5;r.appendChild(c);tb.appendChild(r)}}
+
+function chips(){var c=$("chips");c.textContent="";var cr=num(S.me);
+for(var s=-10;s<=40;s=s<0?20:s+2){(function(s){var b=el("button",s<0?"undo":null,s<0?"패배 "+s:s+"점");b.setAttribute("aria-pressed",S.sel===s);b.disabled=!S.on;b.onclick=function(){S.sel=s;save();chips();viz();expected()};c.appendChild(b)})(s)}}
+
+function ms(tag,at,txt){var e=document.createElementNS("http://www.w3.org/2000/svg",tag);for(var k in at)e.setAttribute(k,at[k]);if(txt!=null)e.textContent=txt;return e}
+function chart(){var c=$("ch");c.textContent="";var t=target();if(!t)return;
+var n=Math.max(1,S.rounds|0),start=num(S.me),goal=t.score+1,pts=[start],last=-1,cur=start,i;
+for(i=0;i<n;i++)if(!blank(S.gains[i]))last=i;
+for(i=0;i<=last;i++){cur+=blank(S.gains[i])?0:Number(S.gains[i]);pts.push(cur)}
+var vs=pts.concat([goal]),mn=Math.min.apply(null,vs),mx=Math.max.apply(null,vs),sp=(mx-mn)||1;mn-=sp*.1;mx+=sp*.1;sp=mx-mn;
+var W=480,H=210,L=50,R=14,T=14,B=26;
+function X(i){return L+i/n*(W-L-R)}function Y(v){return T+(mx-v)/sp*(H-T-B)}
+var s=ms("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":"누적 점수 추이"});
+s.appendChild(ms("line",{x1:L,x2:L,y1:T,y2:H-B,style:"stroke:var(--line);stroke-width:2"}));
+s.appendChild(ms("line",{x1:L,x2:W-R,y1:H-B,y2:H-B,style:"stroke:var(--line);stroke-width:2"}));
+s.appendChild(ms("line",{x1:L,x2:W-R,y1:Y(goal),y2:Y(goal),style:"stroke:var(--top);stroke-width:2;stroke-dasharray:6 4"}));
+s.appendChild(ms("text",{x:L-4,y:Y(goal)+4,"text-anchor":"end",style:"fill:var(--top);font-weight:700;font-size:12px"},fmt(goal)));
+s.appendChild(ms("line",{x1:X(0),y1:Y(start),x2:X(n),y2:Y(goal),style:"stroke:var(--mute);stroke-width:2;stroke-dasharray:2 4"}));
+s.appendChild(ms("text",{x:L-4,y:Y(start)+4,"text-anchor":"end",style:"fill:var(--mute);font-size:12px"},fmt(start)));
+s.appendChild(ms("polyline",{points:pts.map(function(v,k){return X(k)+","+Y(v)}).join(" "),style:"fill:none;stroke:var(--me);stroke-width:3"}));
+pts.forEach(function(v,k){s.appendChild(ms("circle",{cx:X(k),cy:Y(v),r:3.5,style:"fill:var(--me)"}))});
+var cv=pts[pts.length-1],cx=X(last+1),dd=t.score-cv,mid=(Y(cv)+Y(goal))/2,rt=cx<W*0.7;
+s.appendChild(ms("line",{x1:cx,x2:cx,y1:Y(cv),y2:Y(goal),style:"stroke:var(--bad);stroke-opacity:.5;stroke-width:2.5"}));
+s.appendChild(ms("text",{x:rt?cx+7:cx-7,y:mid+4,"text-anchor":rt?"start":"end",style:"fill:var(--bad);font-weight:700;font-size:13px;paint-order:stroke;stroke:var(--card);stroke-width:3"},"점수 차 "+fmt(dd)));
+[0,n].forEach(function(k){s.appendChild(ms("text",{x:X(k),y:H-8,"text-anchor":"middle",style:"fill:var(--mute);font-size:12px"},k+"회"))});
+var lv=pts[pts.length-1];s.appendChild(ms("text",{x:rt?cx+8:cx-8,y:Y(goal)<Y(cv)?Y(cv)+17:Y(cv)-9,"text-anchor":rt?"start":"end",style:"fill:var(--me);font-weight:700;font-size:13px;paint-order:stroke;stroke:var(--card);stroke-width:3"},fmt(lv)));
+c.appendChild(s);var p=el("p","note");
+if(last<0)p.textContent="획득점수를 입력하면 회차별 추이가 그려집니다.";
+else{var ex=start+(goal-start)*(last+1)/n,dl=lv-ex;p.textContent="목표 경로 대비 "+(dl>=0?"+":"")+fmt(Math.round(dl*100)/100)+"점 "+(dl>=0?"앞서는 중":"뒤처지는 중");p.style.color=dl>=0?"var(--ok)":"var(--bad)";p.style.fontWeight="700"}
+c.appendChild(p);var lg=el("p","note");lg.style.marginTop="2px";[["회색 점선: 목표 경로","var(--mute)"],["금색 점선: 역전선","var(--top)"],["청록 실선: 내 누적 점수","var(--me)"],["빨간 실선: 현재 점수 차","var(--bad)"]].forEach(function(r,k){if(k)lg.appendChild(document.createTextNode(" · "));var sp=el("span",null,r[0]);sp.style.color=r[1];sp.style.fontWeight="700";lg.appendChild(sp)});c.appendChild(lg)}
+var DN=["월","화","수","목","금","토","일"],TM=["현재 점수","평균 속도","최근 속도","최대 속도"],SR=[];
+function hist(id){var a=S.hist[id]||[],r=[];for(var i=0;i<7;i++){var v=a[i];r.push(v===""||v==null?null:Number(v))}return r}
+function stat(id){var h=hist(id),pi=-1,ps=500,rc=null,mx=0;for(var i=0;i<7;i++){if(h[i]==null)continue;var rate=(h[i]-ps)/(i-pi);if(rate>mx)mx=rate;rc=rate;pi=i;ps=h[i]}
+return pi<0?null:{last:pi,score:ps,avg:(ps-500)/(pi+1),recent:rc,max:mx}}
+function proj(id,m){var s=stat(id);if(!s)return null;var r=m===1?s.avg:m===2?s.recent:s.max;r=Math.min(Math.max(r,0),S.perDay*40);return Math.round(s.score+r*(6-s.last))}
+
+function stTable(){var tb=$("stt");tb.textContent="";SR=[];var h=el("tr");["유저"].concat(DN,["일평균","최근","최대/일"]).forEach(function(x,j){var tk=j-1===todayIdx();h.appendChild(el("th",tk?"today":j>todayIdx()+1&&j<8?"fut":null,x+(tk?" · 오늘":"")))});tb.appendChild(h);
+[{id:"me",n:"나"}].concat(S.users.map(function(u){return{id:u.id,n:u.nick||"이름 없음"}})).forEach(function(r){var tr=el("tr",r.id==="me"?"me":null),ref={id:r.id,g:[]};ref.nc=tr.appendChild(el("td",null,r.n));ref.nc.style.fontWeight="700";
+for(var i=0;i<7;i++){(function(i){var td=el("td",i===todayIdx()?"today":i>todayIdx()?"fut":null),inp=document.createElement("input"),a=S.hist[r.id]||[];inp.type="number";inp.inputMode="numeric";inp.style.width="74px";inp.setAttribute("aria-label",r.n+" "+DN[i]+"요일 점수");inp.value=a[i]==null?"":a[i];
+inp.addEventListener("input",function(){var arr=S.hist[r.id]||(S.hist[r.id]=[]);arr[i]=inp.value===""?"":Number(inp.value);save();stCells();derived()});
+var g=el("div","sg");td.appendChild(inp);td.appendChild(g);ref.g.push(g);(ref.inp||(ref.inp=[])).push(inp);tr.appendChild(td)})(i)}
+ref.a=el("td");ref.r=el("td");ref.m=el("td");tr.appendChild(ref.a);tr.appendChild(ref.r);tr.appendChild(ref.m);SR.push(ref);tb.appendChild(tr)});stCells()}
+function stCells(){SR.forEach(function(ref){var h=hist(ref.id),pi=-1,ps=500;
+for(var i=0;i<7;i++){var g=ref.g[i];g.className="sg";g.textContent="";if(h[i]==null)continue;var d=h[i]-ps;g.textContent=(d>=0?"+":"")+fmt(d)+(i-pi>1?" ("+(i-pi)+"일)":"");g.className="sg "+(d>=0?"blue":"neg");pi=i;ps=h[i]}
+var s=stat(ref.id);function f(v){return s?fmt(Math.round(v*10)/10):"-"}ref.a.textContent=f(s&&s.avg);ref.r.textContent=f(s&&s.recent);ref.m.textContent=f(s&&s.max)})}
+function spj(){var tb=$("spj");tb.textContent="";var h=el("tr");["유저","기록 점수","평균 속도","최근 속도","최대 속도","이론 상한"].forEach(function(x){h.appendChild(el("th",null,x))});tb.appendChild(h);
+var rows=[{id:"me",nick:"나"}].concat(S.users).map(function(u){var s=stat(u.id);return{me:u.id==="me",n:u.nick||"이름 없음",s:s,v:[1,2,3].map(function(m){return proj(u.id,m)}),cap:s?s.score+(6-s.last)*S.perDay*40:null}});
+var mx=[0,1,2].map(function(k){return Math.max.apply(null,rows.map(function(r){return r.v[k]==null?-1e9:r.v[k]}))});
+rows.forEach(function(r){var tr=el("tr",r.me?"me":null);tr.appendChild(el("td",null,r.n)).style.cssText="text-align:center;font-weight:700";tr.appendChild(el("td",null,r.s?fmt(r.s.score)+" ("+DN[r.s.last]+")":"-"));
+r.v.forEach(function(v,k){var c=el("td",null,v==null?"-":fmt(v));if(v!=null&&v===mx[k]){c.style.fontWeight="900";c.style.color="var(--top)"}tr.appendChild(c)});
+tr.appendChild(el("td",null,r.cap==null?"-":fmt(Math.round(r.cap))));tb.appendChild(tr)});
+var d=$("sn");d.textContent="";[["평균 속도","시즌 시작(500점)부터 마지막 기록일까지의 하루 평균 획득점수가 남은 기간에도 이어진다고 가정한 예상 최종 점수입니다."],["최근 속도","가장 최근 기록 구간의 하루 평균 획득점수가 남은 기간 계속될 때의 예상 점수입니다. 막판에 속도가 붙었거나 식었을 때 반영됩니다."],["최대 속도","지금까지 하루에 가장 많이 얻은 획득점수가 남은 기간 매일 반복된다고 가정한 가장 공격적인 예상 점수입니다."],["이론 상한","남은 기간 매일 하루 도전 횟수 전부를 40점으로 이긴다고 가정한 이론상 최대 점수입니다. 실제로 도달하기는 어렵습니다."]].forEach(function(r){var p=el("p",null);p.style.margin="4px 0";var b=el("b",null,r[0]+": ");b.style.color="var(--ink)";p.appendChild(b);p.appendChild(document.createTextNode(r[1]));d.appendChild(p)});
+var e=el("p",null,"예상은 유저별 마지막 기록일 이후 남은 일수 × 속도로 계산하며 하루 최대 획득점수(하루 도전 횟수 × 40점)를 넘지 않습니다. 금색 굵은 숫자는 해당 기준의 예상 1등입니다.");e.style.margin="4px 0";d.appendChild(e)}
+
+function syncUser(u){var k=todayIdx(),arr=S.hist[u.id]||(S.hist[u.id]=[]);arr[k]=(u.score===""||u.score==null)?"":Number(u.score);
+for(var q=0;q<SR.length;q++)if(SR[q].id===u.id&&SR[q].inp&&SR[q].inp[k])SR[q].inp[k].value=arr[k];stCells()}
+var RCOL=["var(--top)","#7b61ff","#d1495b","#e07a1f","#1f6feb","#b5179e","#6b7280","#8d5a3b"];
+function tcol(r){return(!r.me&&r.rk===1)?"#14202b":"#fff"}
+function bdg(s,x,y,r,rad){s.appendChild(ms("circle",{cx:x,cy:y,r:rad,style:"fill:"+r.c+";stroke:var(--card);stroke-width:1.5"}));
+s.appendChild(ms("text",{x:x,y:y+rad*0.38,"text-anchor":"middle",style:"font-size:"+Math.round(rad*1.2)+"px;font-weight:900;fill:"+tcol(r)},r.me?"나":String(r.rk)))}
+function bdgEl(r,off){var b=el("span",null,r.me?"나":String(r.rk));b.style.cssText="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:10px;padding:0 5px;font-size:12px;font-weight:900;color:"+tcol(r)+";background:"+(off?"var(--mute)":r.c);return b}
+function gseries(){var t=target(),m=S.gm||1,rows=[{id:"me",n:"나",c:"var(--me)",me:1}];
+S.users.forEach(function(u,i){var tp=!!(t&&u.id===t.id),rk=(u.rank!==""&&u.rank!=null&&Number(u.rank)>=1)?Math.floor(Number(u.rank)):i+1;rows.push({id:u.id,rk:rk,n:(u.nick||"이름 없음").slice(0,9),c:RCOL[(rk-1)%8],top:tp})});
+rows.forEach(function(r){r.h=hist(r.id);r.s=stat(r.id);r.p=r.s?proj(r.id,m):null});return rows.filter(function(r){return r.s})}
+function trendChart(host,rows,f,zero){host.textContent="";
+var W=720,H=Math.max(340,rows.length*36+90),L=58,R=170,T=16,B=30,vals=zero?[0]:[],ss=rows.map(function(r){var o=f(r);o.r=r;return o}).filter(function(o){return o.v.some(function(x){return x!=null})||o.p!=null});
+if(!ss.length){host.appendChild(el("div","empty","표시할 기록이 없습니다. 유저 점수를 입력하거나 범례에서 유저를 켜 주세요."));return}
+ss.forEach(function(o){o.v.forEach(function(x){if(x!=null)vals.push(x)});if(o.p!=null)vals.push(o.p)});
+var mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals),sp=(mx-mn)||1;mn-=sp*.1;mx+=sp*.1;sp=mx-mn;
+function X(i){return L+i/6*(W-L-R)}function Y(v){return T+(mx-v)/sp*(H-T-B)}
+var s=ms("svg",{viewBox:"0 0 "+W+" "+H,role:"img"}),ti=todayIdx();
+s.appendChild(ms("rect",{x:X(ti)-20,y:T,width:40,height:H-T-B,style:"fill:var(--me);fill-opacity:.1"}));
+for(var k=0;k<=4;k++){var gv=mn+sp*k/4;s.appendChild(ms("line",{x1:L,x2:W-R,y1:Y(gv),y2:Y(gv),style:"stroke:var(--line);stroke-width:1"}));s.appendChild(ms("text",{x:L-8,y:Y(gv)+4,"text-anchor":"end",style:"fill:var(--mute);font-size:12px"},fmt(Math.round(gv))))}
+for(var d=0;d<7;d++)s.appendChild(ms("line",{x1:X(d),x2:X(d),y1:T,y2:H-B,style:"stroke:var(--line);stroke-width:1;stroke-dasharray:2 4"}));
+if(zero){s.appendChild(ms("line",{x1:L,x2:W-R,y1:Y(0),y2:Y(0),style:"stroke:var(--top);stroke-width:3"}));s.appendChild(ms("text",{x:W-R+12,y:Y(0)+4,style:"fill:var(--top);font-weight:900;font-size:13px"},"1등 (기준 0)"))}
+DN.forEach(function(n,i){s.appendChild(ms("text",{x:X(i),y:H-9,"text-anchor":"middle",style:"fill:"+(i===ti?"var(--me)":"var(--mute)")+";font-size:13px;font-weight:"+(i===ti?900:400)},n+(i===ti?" · 오늘":"")))});
+var ends=[];
+ss.forEach(function(o){var c=o.r.c,pts=[],last=-1,w=(o.r.me||o.r.top)?3.5:2.5;
+o.v.forEach(function(x,i){if(x!=null){pts.push([X(i),Y(x)]);last=i}});
+if(pts.length>1)s.appendChild(ms("polyline",{points:pts.map(function(p){return p.join(",")}).join(" "),style:"fill:none;stroke-linejoin:round;stroke:"+c+";stroke-width:"+w}));
+pts.forEach(function(p){s.appendChild(ms("circle",{cx:p[0],cy:p[1],r:4,style:"fill:"+c+";stroke:var(--card);stroke-width:1.5"}))});
+var e=null;
+if(o.p!=null&&last<6){var sx=last>=0?pts[pts.length-1][0]:X(0),sy=last>=0?pts[pts.length-1][1]:Y(o.p);
+s.appendChild(ms("line",{x1:sx,y1:sy,x2:X(6),y2:Y(o.p),style:"stroke:"+c+";stroke-width:"+w+";stroke-dasharray:7 5"}));
+s.appendChild(ms("circle",{cx:X(6),cy:Y(o.p),r:6,style:"fill:var(--card);stroke:"+c+";stroke-width:2.5"}));e={y:Y(o.p),x:X(6),o:o,v:o.p,proj:1}}
+else if(last>=0)e={y:pts[pts.length-1][1],x:pts[pts.length-1][0],o:o,v:o.v[last]};
+if(e)ends.push(e)});
+spread(ends,34,T+8,H-B);
+ends.forEach(function(e){var c=e.o.r.c,lx=W-R+12;
+s.appendChild(ms("line",{x1:e.x+8,y1:e.y,x2:lx-2,y2:e.ly-4,style:"stroke:"+c+";stroke-width:1;stroke-opacity:.6"}));
+bdg(s,lx+9,e.ly-4,e.o.r,9);
+s.appendChild(ms("text",{x:lx+24,y:e.ly,style:"fill:"+c+";font-weight:900;font-size:13px;paint-order:stroke;stroke:var(--card);stroke-width:3"},e.o.r.n));
+s.appendChild(ms("text",{x:lx+24,y:e.ly+14,style:"fill:var(--ink);font-weight:700;font-size:12px;paint-order:stroke;stroke:var(--card);stroke-width:3"},(zero&&e.v>0?"+":"")+fmt(Math.round(e.v))+(e.proj?" (예상)":"")))});
+host.appendChild(s)}
+function barChart(host,rows,top){host.textContent="";
+var ds=rows.map(function(r){return{r:r,cur:r.s.score,fin:r.p!=null?Math.max(r.p,r.s.score):r.s.score}}).sort(function(a,b){return b.fin-a.fin});
+if(!ds.length){host.appendChild(el("div","empty","표시할 기록이 없습니다."));return}
+var W=720,rh=50,T=14,L=160,R=190,H=T+ds.length*rh+34,mx=Math.max.apply(null,ds.map(function(d){return d.fin})),x0=500,tf=top&&top.p!=null?Math.max(top.p,top.s.score):null;
+function X(v){return L+(v-x0)/((mx-x0)||1)*(W-L-R)}
+var s=ms("svg",{viewBox:"0 0 "+W+" "+H,role:"img"});
+for(var k=0;k<=4;k++){var gv=x0+(mx-x0)*k/4;s.appendChild(ms("line",{x1:X(gv),x2:X(gv),y1:T,y2:H-26,style:"stroke:var(--line);stroke-width:1"}));s.appendChild(ms("text",{x:X(gv),y:H-9,"text-anchor":"middle",style:"fill:var(--mute);font-size:12px"},fmt(Math.round(gv))))}
+ds.forEach(function(d,i){var y=T+i*rh,c=d.r.c,bh=22,by=y+8;
+bdg(s,16,by+bh/2,d.r,11);
+s.appendChild(ms("text",{x:L-10,y:by+bh/2+5,"text-anchor":"end",style:"fill:var(--ink);font-weight:900;font-size:13px"},d.r.n));
+s.appendChild(ms("rect",{x:L,y:by,width:Math.max(2,X(d.fin)-L),height:bh,rx:4,style:"fill:"+c+";fill-opacity:.28"}));
+s.appendChild(ms("rect",{x:L,y:by,width:Math.max(2,X(d.cur)-L),height:bh,rx:4,style:"fill:"+c}));
+var tx=W-R+14;
+s.appendChild(ms("text",{x:tx,y:by+9,style:"fill:var(--ink);font-weight:900;font-size:14px"},fmt(Math.round(d.fin))+" 예상"));
+var g=top&&!d.r.top&&tf!=null?Math.round(d.fin-tf):null;
+s.appendChild(ms("text",{x:tx,y:by+25,style:"font-size:12px;font-weight:700;fill:"+(d.r.top?"var(--top)":g!=null&&g<0?"var(--bad)":"var(--mute)")},"현재 "+fmt(d.cur)+(d.r.top?" · 1등":g!=null?" · 예상 1등 대비 "+(g>0?"+":"")+fmt(g):""))) });
+if(tf!=null)s.appendChild(ms("line",{x1:X(tf),x2:X(tf),y1:T,y2:H-26,style:"stroke:var(--top);stroke-width:2.5;stroke-dasharray:6 4"}));
+host.appendChild(s)}
+var HC=["#eceff1","#cdeaf3","#8fd3df","#5cbf9f","#9ccc4f","#f2c744","#ee8434","#b3282d"];
+function hn(){return 8}
+function hbin(g){return g<0?-1:Math.min(hn()-1,Math.floor(g/100))}
+function hcol(i){return HC[Math.round(i*7/(hn()-1))]}
+function heatMap(host,rows,top){host.textContent="";
+if(!rows.length){host.appendChild(el("div","empty","표시할 기록이 없습니다."));return}
+var ti=todayIdx(),mxr=1,data=rows.map(function(r){var pi=-1,ps=500,cells=[];for(var i=0;i<7;i++){var v=r.h[i];if(v==null){cells.push(null);continue}var g=v-ps,dd=i-pi,per=g/dd;if(per>mxr)mxr=per;cells.push({g:g,dd:dd,per:per});pi=i;ps=v}return{r:r,cells:cells}}).sort(function(a,b){return b.r.s.score-a.r.s.score});
+var tb=el("table"),h=el("tr");["유저"].concat(DN,["현재 점수","예상 최종"]).forEach(function(x,j){h.appendChild(el("th",j-1===ti?"today":null,x+(j-1===ti?" · 오늘":"")))});tb.appendChild(h);
+data.forEach(function(d){var tr=el("tr",d.r.me?"me":null);var nc=el("td");nc.style.cssText="font-weight:900;white-space:nowrap";nc.appendChild(bdgEl(d.r));nc.appendChild(document.createTextNode(" "+d.r.n+(d.r.top?" ★":"")));tr.appendChild(nc);
+d.cells.forEach(function(c,k){var td=el("td",k>ti?"fut":null);if(!c){td.textContent="-";td.style.color="var(--mute)"}else{var hv=c.g<0?c.g:c.g/c.dd,bi=hbin(hv);td.style.background=bi<0?"#8a98a3":hcol(bi);td.style.color=(bi>=hn()-1||bi<0)?"#fff":"#14202b";td.style.fontWeight="700";td.textContent=(c.g>=0?"+":"")+fmt(c.g);if(c.dd>1){var sm=el("small",null," ("+c.dd+"일)");sm.style.cssText="font-weight:400;color:var(--mute)";td.appendChild(sm)}}tr.appendChild(td)});
+tr.appendChild(el("td",null,fmt(d.r.s.score)));var f=el("td",null,d.r.p!=null?fmt(d.r.p):"-");f.style.fontWeight="900";if(d.r.top)f.style.color="var(--top)";tr.appendChild(f);tb.appendChild(tr)});
+host.appendChild(tb);var lgd=el("div","lg");lgd.style.marginTop="10px";for(var i=0;i<hn();i++){var sp=el("span"),b=el("i");b.style.cssText="background:"+hcol(i)+";border-radius:3px;width:16px;height:12px;border:1px solid var(--line)";sp.appendChild(b);sp.appendChild(document.createTextNode(i===hn()-1?(i*100)+" 이상":i*100+"~"+(i*100+99)));lgd.appendChild(sp)}var ls=el("span");var lb=el("i");lb.style.cssText="background:#8a98a3;border-radius:3px;width:16px;height:12px";ls.appendChild(lb);ls.appendChild(document.createTextNode("손실(음수)"));lgd.appendChild(ls);host.appendChild(lgd);host.appendChild(el("p","note","칸의 숫자는 이전 기록 대비 획득점수이며, 색은 획득점수를 100점 단위로 구분한 것이며, 700점 이상은 모두 빨간색으로 표시합니다. (n일)은 며칠치가 합쳐진 값이라 하루 평균으로 색을 정합니다."))}
+function trends(){var all=gseries(),m=S.gm||1,view=S.gv||"score",gt=S.gt||"line",hid=S.gh||(S.gh={}),c=$("gm");c.textContent="";
+function grp(list,get,set){list.forEach(function(a){var b=el("button",null,a[1]);b.setAttribute("aria-pressed",get()===a[0]);b.onclick=function(){set(a[0]);save();trends()};c.appendChild(b)})}
+function sep(){var x=el("span",null,"│");x.style.cssText="color:var(--line);align-self:center";c.appendChild(x)}
+grp([["line","꺾은선"],["bar","현황 막대"],["heat","일별 획득 히트맵"]],function(){return gt},function(v){S.gt=v});
+sep();grp([[1,"예상 "+TM[1]],[2,"예상 "+TM[2]],[3,"예상 "+TM[3]]],function(){return m},function(v){S.gm=v});
+var lg=$("gl");lg.textContent="";all.forEach(function(r){var b=el("button","lgb");b.setAttribute("aria-pressed",!hid[r.id]);b.style.display="inline-flex";b.style.alignItems="center";b.style.gap="6px";b.appendChild(bdgEl(r,hid[r.id]));b.appendChild(document.createTextNode(r.n+(r.top?" (목표)":"")));b.onclick=function(){hid[r.id]=!hid[r.id];save();trends()};lg.appendChild(b)});
+var rows=all.filter(function(r){return !hid[r.id]}),top=all.filter(function(r){return r.top})[0],ct=$("gct");
+$("gnote").style.display=gt==="line"?"":"none";
+if(gt==="bar"){ct.textContent="현재 점수와 일요일 예상 최종 점수 (막대 시작 500점, 연한 부분 = 예상 증가분, 금색 점선 = 1등 예상)";barChart($("gc1"),rows,top);return}
+if(gt==="heat"){ct.textContent="일별 획득 점수 히트맵";heatMap($("gc1"),rows,top);return}
+{ct.textContent="일별 누적 점수 + 1등 예상 최종 점수";trendChart($("gc1"),rows,function(r){return{v:r.h,p:r.p}},false)}}
+
+function dayInfo(){if(!S.start)return null;var p=S.start.split("-"),s=new Date(+p[0],+p[1]-1,+p[2]),now=new Date();return{n:Math.floor((now-s)/864e5)+1,left:s.getTime()+7*864e5-6e4-now}}
+function clock(){var c=$("sclock");c.textContent="";var i=dayInfo();
+if(!i){c.textContent="시즌 시작일을 입력하세요.";return}
+if(i.n<1){c.textContent="시즌 시작 전";return}
+if(i.n>7){c.textContent="시즌 종료 · 새 시즌 시작일을 입력하세요";return}
+var h=Math.max(0,Math.floor(i.left/36e5)),mi=Math.max(0,Math.floor(i.left/6e4)%60),t=el("div","sc-top");
+t.appendChild(el("span","sc-day",i.n+"일차 ("+DN[i.n-1]+")"));t.appendChild(el("span",null,"일요일 23:59까지"));
+t.appendChild(el("span","sc-left "+(h<24?"hot":h<72?"warn":"ok"),Math.floor(h/24)+"일 "+h%24+"시간 "+mi+"분"));c.appendChild(t);
+}
+
+function derived(){viz();sum();rounds();expected();chart();spj();stNames();tbtns();kpi();trends()}
+if(S.on===undefined)S.on=true;if(!S.tiers)S.tiers=defTiers();if(!S.tDef)S.tDef=JSON.parse(JSON.stringify(S.tiers));if(!S.hist)S.hist={};if(!S.perDay)S.perDay=20;if(S.tmode==null)S.tmode=0;if(S.start==null)S.start="";setSw("ton",!!S.tEdit);setSw("on",S.on);
+$("on").onclick=function(){S.on=!S.on;setSw("on",S.on);save();chips();viz();expected()};
+$("me").value=S.me;$("rounds").value=S.rounds;
+$("me").addEventListener("input",function(){S.me=$("me").value===""?0:Number($("me").value);save();syncToday();derived()});
+$("rounds").addEventListener("input",function(){var v=Math.floor(Number($("rounds").value));S.rounds=v>0?Math.min(v,200):1;save();derived()});
+$("add").onclick=function(){var mr=0;S.users.forEach(function(x){if(Number(x.rank)>mr)mr=Number(x.rank)});S.users.push({id:S.nid++,rank:mr+1,nick:"",score:""});save();renderUsers();derived()};
+$("clr").onclick=function(){S.gains=[];save();derived()};
+$("treset").onclick=function(){S.tiers=JSON.parse(JSON.stringify(S.tDef||defTiers()));save();tiers();viz();expected()};
+$("ton").onclick=function(){S.tEdit=!S.tEdit;setSw("ton",S.tEdit);if(!S.tEdit)S.tDef=JSON.parse(JSON.stringify(S.tiers));save();tiers()};
+$("sstart").value=S.start;$("perday").value=S.perDay;
+$("sstart").addEventListener("input",function(){S.start=$("sstart").value;save();clock()});
+$("perday").addEventListener("input",function(){var v=Math.floor(Number($("perday").value));S.perDay=v>0?v:20;save();spj()});
+
+function fixState(){if(!Array.isArray(S.gains))S.gains=[];if(!Array.isArray(S.users))S.users=[];if(S.me==null||S.me==="")S.me=0;if(!(S.rounds>0))S.rounds=20;if(S.sel==null)S.sel=28;if(!S.nid){S.nid=S.users.reduce(function(m,u){return Math.max(m,Number(u.id)||0)},0)+1}
+if(S.on===undefined)S.on=true;if(!Array.isArray(S.tiers)||!S.tiers.length)S.tiers=defTiers();if(!Array.isArray(S.tDef))S.tDef=JSON.parse(JSON.stringify(S.tiers));if(!S.hist||typeof S.hist!=="object")S.hist={};if(!(S.perDay>0))S.perDay=20;if(S.tmode==null)S.tmode=0;if(S.start==null)S.start=""}
+function jmsg(t,bad){var m=$("jmsg");m.textContent=t;m.style.color=bad?"var(--bad)":"var(--ok)";m.style.fontWeight="700"}
+function pad2(n){return(n<10?"0":"")+n}
+$("jsave").onclick=function(){try{var d=new Date(),name="arena-calc-"+d.getFullYear()+pad2(d.getMonth()+1)+pad2(d.getDate())+"-"+pad2(d.getHours())+pad2(d.getMinutes())+".json";
+var blob=new Blob([JSON.stringify({app:"arena-calc",version:1,savedAt:d.toISOString(),data:S},null,2)],{type:"application/json"});
+var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
+jmsg("저장했습니다: "+name)}catch(e){jmsg("저장에 실패했습니다.",1)}};
+$("jload").onclick=function(){$("jfile").value="";$("jfile").click()};
+function applyData(d,name){try{S=d;fixState();save();
+$("me").value=S.me;$("rounds").value=S.rounds;$("sstart").value=S.start;$("perday").value=S.perDay;
+setSw("ton",!!S.tEdit);setSw("on",S.on);renderUsers();tiers();chips();gchips();derived();clock();
+jmsg("불러왔습니다: "+name+" · 내 점수 "+fmt(num(S.me))+" · 유저 "+S.users.length+"명")}catch(e){jmsg("불러오기 중 오류가 발생했습니다: "+e.message,1)}}
+$("jfile").addEventListener("change",function(){var f=this.files&&this.files[0];if(!f){jmsg("선택된 파일이 없습니다.",1);return}jmsg("파일을 읽는 중… "+f.name);var rd=new FileReader();
+rd.onerror=function(){jmsg("파일을 읽지 못했습니다.",1)};
+rd.onload=function(){var o;try{o=JSON.parse(String(rd.result).replace(/^\uFEFF/,""))}catch(e){jmsg("올바른 JSON 파일이 아닙니다.",1);return}
+var d=o&&o.app==="arena-calc"&&o.data?o.data:o;
+if(!d||typeof d!=="object"||!Array.isArray(d.users)){jmsg("아레나 계산기 백업 파일이 아닙니다.",1);return}
+var m=$("jmsg");m.textContent="";m.style.color="var(--ink)";m.style.fontWeight="700";
+m.appendChild(document.createTextNode(f.name+" (유저 "+d.users.length+"명, 내 점수 "+fmt(num(d.me))+")으로 현재 데이터를 덮어쓸까요? "));
+var y=el("button","pri","덮어쓰기"),n=el("button",null,"취소");y.type=n.type="button";y.style.marginRight="6px";
+y.onclick=function(){applyData(d,f.name)};n.onclick=function(){jmsg("불러오기를 취소했습니다.",1)};m.appendChild(y);m.appendChild(n)};rd.readAsText(f)});
+
+function curTheme(){var a=document.documentElement.getAttribute("data-theme");return a||(window.matchMedia&&matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")}
+function paintTheme(){var d=curTheme()==="dark",b=$("theme");b.textContent=d?"☀️ 라이트 모드":"🌙 다크 모드";b.setAttribute("aria-label",d?"라이트 모드로 전환":"다크 모드로 전환")}
+$("theme").onclick=function(){var n=curTheme()==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",n);try{localStorage.setItem("arena-theme",n)}catch(e){}paintTheme()};
+paintTheme();
+
+renderUsers();S.users.forEach(function(u){var a=S.hist[u.id],k=todayIdx();if(u.score!==""&&u.score!=null&&(!a||blank(a[k])))syncUser(u)});{var h0=S.hist.me;if(!h0||blank(h0[todayIdx()]))syncToday()}tiers();chips();gchips();derived();clock();setInterval(clock,60000);
+</script>
+</body>
+</html>
