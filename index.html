@@ -244,7 +244,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function $(i){return document.getElementById(i)}
 function curScore(){var s=num(S.me),n=Math.max(1,S.rounds|0);for(var i=0;i<n;i++){var g=S.gains[i];if(g!==""&&g!=null)s+=Number(g)}return s}
 function setSw(id,v){var b=$(id);b.setAttribute("aria-checked",!!v);b.classList.toggle("on",!!v);var l=$(id+"l");if(l)l.textContent=v?"ON":"OFF"}
-function defTiers(){return[[40,200,300],[38,160,199],[36,120,159],[34,80,119],[32,40,79],[30,-19,39],[28,-80,-49]].map(function(r){return{g:r[0],min:r[1],max:r[2]}})}
+function defTiers(){return[[40,200,300],[38,160,199],[36,120,159],[34,80,119],[32,40,79],[30,-40,39],[28,-80,-39]].map(function(r){return{g:r[0],min:r[1],max:r[2]}})}
 function tier(d){var T=S.tiers.filter(function(t){return t.min!==""&&t.max!==""&&t.min!=null&&t.max!=null});if(!T.length)return null;
 for(var i=0;i<T.length;i++)if(d>=T[i].min&&d<=T[i].max)return T[i].g;
 var hi=T.reduce(function(a,b){return b.max>a.max?b:a}),lo=T.reduce(function(a,b){return b.min<a.min?b:a});
