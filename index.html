@@ -222,6 +222,7 @@ tr.me td{background:rgba(14,124,134,.09)}tr.me td.today{background:rgba(14,124,1
 </div>
 <p class="note">하루 기본 10회 + 크리스탈 10회 = 20회가 기본값입니다. 칸에는 그날 마지막으로 확인한 누적 점수를 입력하세요. 모두 500점에서 시작하고, 칸 아래 숫자는 이전 기록 대비 획득점수입니다.</p>
 <div class="scroll"><table id="stt"></table></div>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px"><button id="stclr" type="button" class="undo">전체 지우기</button><span id="stmsg" class="note" role="status" style="margin:0"></span></div>
 <h2 style="margin-top:18px">1등 예상 최종 점수</h2>
 <div class="scroll"><table id="spj"></table></div>
 <div class="note" id="sn"></div>
@@ -576,6 +577,13 @@ m.appendChild(document.createTextNode(f.name+" (유저 "+d.users.length+"명, �
 var y=el("button","pri","덮어쓰기"),n=el("button",null,"취소");y.type=n.type="button";y.style.marginRight="6px";
 y.onclick=function(){applyData(d,f.name)};n.onclick=function(){jmsg("불러오기를 취소했습니다.",1)};m.appendChild(y);m.appendChild(n)};rd.readAsText(f)});
 
+
+function stClear(){var m=$("stmsg");m.textContent="";m.style.color="var(--ink)";m.style.fontWeight="700";
+m.appendChild(document.createTextNode("모든 유저의 일별 점수 기록을 지울까요? 되돌릴 수 없습니다. "));
+var y=el("button","undo","지우기"),n=el("button",null,"취소");y.type=n.type="button";y.style.marginRight="6px";
+y.onclick=function(){S.hist={};S.users.forEach(function(u){if(u.score!==""&&u.score!=null)syncUser(u)});stTable();syncToday();derived();m.textContent="일별 점수 기록을 모두 지웠습니다. 오늘 칸은 현재 점수로 다시 입력됩니다.";m.style.color="var(--ok)"};
+n.onclick=function(){m.textContent=""};m.appendChild(y);m.appendChild(n)}
+$("stclr").onclick=stClear;
 function curTheme(){var a=document.documentElement.getAttribute("data-theme");return a||(window.matchMedia&&matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")}
 function paintTheme(){var d=curTheme()==="dark",b=$("theme");b.textContent=d?"☀️ 라이트 모드":"🌙 다크 모드";b.setAttribute("aria-label",d?"라이트 모드로 전환":"다크 모드로 전환")}
 $("theme").onclick=function(){var n=curTheme()==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",n);try{localStorage.setItem("arena-theme",n)}catch(e){}paintTheme()};
